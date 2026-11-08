@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "nemlai": {
+      "type": "http",
+      "url": "https://nemlai.milops.org/mcp",
+      "headers": {
+        "Authorization": "Bearer ${NEMLAI_TOKEN}"
+      }
+    }
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "nemlai",
+  "description": "Plan, adjust and send grocery baskets with NemlAI for Nemlig.com and other Danish shops: the NemlAI MCP server plus the nemlai skill.",
+  "author": {
+    "name": "NemlAI",
+    "url": "https://nemlai.milops.org"
+  },
+  "homepage": "https://nemlai.milops.org/agents",
+  "repository": "https://github.com/miller-milops/nemlai-mcp",
+  "license": "MIT",
+  "keywords": [
+    "nemlai",
+    "nemlig",
+    "groceries",
+    "denmark",
+    "mcp",
+    "shopping"
+  ]
+}

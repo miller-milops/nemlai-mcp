@@ -1,0 +1,28 @@
+{
+  "name": "nemlai",
+  "owner": {
+    "name": "NemlAI",
+    "url": "https://nemlai.milops.org"
+  },
+  "metadata": {
+    "description": "Plan, adjust and send grocery baskets with NemlAI for Nemlig.com and other Danish shops: the NemlAI MCP server plus the nemlai skill."
+  },
+  "plugins": [
+    {
+      "name": "nemlai",
+      "source": "./claude-code",
+      "description": "Plan, adjust and send grocery baskets with NemlAI for Nemlig.com and other Danish shops: the NemlAI MCP server plus the nemlai skill.",
+      "homepage": "https://nemlai.milops.org/agents",
+      "license": "MIT",
+      "keywords": [
+        "nemlai",
+        "nemlig",
+        "groceries",
+        "denmark",
+        "mcp",
+        "shopping"
+      ],
+      "category": "productivity"
+    }
+  ]
+}
