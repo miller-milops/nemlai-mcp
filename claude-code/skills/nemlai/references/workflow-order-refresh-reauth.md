@@ -5,9 +5,12 @@ Fetch new orders from Nemlig; when the stored Nemlig session has expired, hand t
 **User says:** "hent mine nye ordrer", "the basket doesn't know about last week's order", or a tool
 returned `reauth_required`.
 
-1. `order_fetch_status()`: when each member's orders were last fetched.
-2. `refresh_orders()` for the household (or one member, only if the user names them). It uses the
-   stored Nemlig session only and never takes a password. It is a job: wait, or poll `job_status()`.
+1. `order_fetch_status()`: when each member's orders were last fetched, and whether each login
+   works (`session_valid`, `needs_reauth`). "Is my login expired?" is answered here; don't start a
+   refresh just to test it.
+2. Only when the user wants new orders: `refresh_orders()` for the caller's own Nemlig account (or
+   `member=` one person, only if the user names them). It uses the stored Nemlig session only and
+   never takes a password. It is a job: wait, or poll `job_status()`.
 3. Done → tell the user how many new orders arrived; offer `generate_basket()` for a fresh basket.
 4. **`reauth_required`** (the Nemlig session expired):
    - Don't ask for the Nemlig password, and don't accept it if the user pastes it.

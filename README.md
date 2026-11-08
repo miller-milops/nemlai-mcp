@@ -1,10 +1,5 @@
 # NemlAI: nemlig MCP-server til Claude, ChatGPT og andre AI-agenter
 
-> **Status:** MCP-serveren og `nemlai mcp` (nemlai 0.11) er færdige og går live snart. Indtil da svarer
-> `https://nemlai.milops.org/mcp` med 404, og trinene nedenfor virker først derefter. Webappen på
-> [nemlai.milops.org](https://nemlai.milops.org) virker allerede. Klik *Watch* for at få besked.
-> *The MCP server and `nemlai mcp` go live soon; until then the setup steps below don't work yet.*
-
 **Jeres næste indkøb, forudset.** NemlAI er AI-indkøb til nemlig.com: den lærer af jeres egen
 ordrehistorik, forudser hvad der skal i næste kurv, og lægger den klar med mængder. Tænk på det som
 en automatisk indkøbsliste, der også fylder kurven. De fleste nemlig-MCP'er kan søge og lægge varer i

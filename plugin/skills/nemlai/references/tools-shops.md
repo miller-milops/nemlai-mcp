@@ -41,7 +41,9 @@ Arguments: `shops` (price-shop ids; default every shop except Nemlig), `detail_s
 shop's lines, `limit`/`cursor` for those lines (default 50), `overrides`
 `{sku: {shop_id: product_number}}` from `list_alternatives` (sku = the basket item's sku from `get_basket`).
 Returns: `basket` (`item_count`, `total_kr` at Nemlig), `shops[]` with `total` (kr),
-`total_is_partial`, `counts` (matched/equivalent/suggestion/unavailable/unpriced), `not_matched`
+`total_is_partial`, `counts` (matched/equivalent/suggestion/unavailable/unpriced/stale), `note` (small
+print for the shop, e.g. that "Bilka" shows BilkaToGo's prices), `prices_as_of` (the oldest price in
+that total), `not_matched`
 (first 20) or, for `detail_shop`, `items[]` (`key` = the basket sku, `basket_name`, `status`, `product_number`,
 `name`, `quantity`, `price`, campaign fields) and `next_cursor`; `cheapest_shop`. With an empty basket:
 `source: "pregenerated"` and the old comparison of the basket NemlAI prepared.

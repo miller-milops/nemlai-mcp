@@ -26,7 +26,10 @@ Returns: a job. Completed: `result.orders_found`, `orders_new`, `orders_uploaded
 `orders_failed`, `stored_order_total`, `steps`, `member`. Still running: `job_id` for `job_status`.
 `already_running: true` when a refresh was already in progress (you get that job, not a new one).
 Next: `job_status` while running; `generate_basket` afterwards if the user wants a fresh basket.
-Pitfalls: `reauth_required` means the stored Nemlig login expired: send the user to the link in the
+Pitfalls: it changes data and contacts Nemlig: run it only when the user wants new orders, never
+just to test a login (`order_fetch_status` shows `session_valid` and `needs_reauth`). Without
+`member` it refreshes the caller's own Nemlig account, not every member's.
+`reauth_required` means the stored Nemlig login expired: send the user to the link in the
 hint and never ask for the Nemlig password in chat. At most 5 refreshes a minute per household
 (`rate_limited`). It fetches at most 50 new orders per run; run it again if `orders_new` was 50.
 Fallback: CLI `nemlai --json orders refresh [--member <user_id>]`; web https://nemlai.milops.org/refresh-orders (Open the page (log in if asked). Click 'Opdater' and wait until it says the orders are uploaded. If it asks you to log in to Nemlig again, the user does that on the page (never in chat).)

@@ -102,7 +102,8 @@ nemlai help                    # every command
 - Every MCP tool names its CLI command (see the `fallback` topic, or `error.fallback.cli`). Run
   that command as written: the global `--json` makes every command print one JSON object
   (`status` plus the data, or `status` + `message` for a text reply, or `status` + `error` + `hint`).
-  With nemlai older than 0.11 (`nemlai --version`), add `--format json` to analytics commands.
+  With nemlai older than 0.11 (`nemlai --version`), add `--format json` to analytics commands; the
+  report then comes back as a JSON string in `message`, so parse it a second time.
 - The CLI reads the token from `~/.config/nemlai/token`, else from `NEMLAI_TOKEN`. Don't pass
   `--token` on the command line (it shows up in process lists).
 - Never type a password into the CLI for the user. Commands that need one (`login`, `shops link`,
@@ -207,7 +208,9 @@ elsewhere, e.g. on `/kurv/`: `get_basket()` again, then redo the change), `inter
 
 1. **Show before you send.** Before `send_basket()`, show the user the items (name, quantity, price)
    and the total in kr, and the budget if there is one. Send only when the user clearly says so
-   ("send it", "ja, send"). A request to "make a basket" is not a request to send it.
+   ("send it", "ja, send") about the basket you showed. A request to "make a basket" is not a
+   request to send it, and "send kurven" about a basket the user hasn't seen in this conversation
+   means: show it and ask "Skal jeg sende den til Nemlig?" first.
 2. **Send once.** `send_basket()` is a job. If it times out, fails or the result is unclear, check
    `job_status()` with its `job_id`, or `get_basket()`, before anything else. A second send can
    double the shop's cart.
@@ -241,6 +244,8 @@ elsewhere, e.g. on `/kurv/`: `get_basket()` again, then redo the change), `inter
    the household's.
 10. **Never take ids from the user's head.** SKUs, dish ids, job ids and order ids come from earlier
     tool results. If an id is unknown, the error lists candidates: pick from those or search again.
+    A vague request ("tilføj mælk") that matches different products (øko or not, fat %, size) is not
+    a choice: show the options, or what the household usually buys (`analytics_top()`), and ask.
 11. **Never ask for a password.** Not for NemlAI, Nemlig, Salling/Bilka or any shop, at any step.
     Logins, linking a shop, Nemlig reauth, password changes and deleting the account happen in the
     web app; give the user the link (`account_links()`) and let them do it.
