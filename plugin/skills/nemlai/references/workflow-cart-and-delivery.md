@@ -10,7 +10,8 @@ See what is already in the user's cart at Nemlig or BilkaToGo, and which deliver
 2. Sending: call `send_basket(shop=…)` without `cart_mode`. If the shop's cart already holds items,
    nothing is sent and the answer is `cart_not_empty`: ask the user `details.ask_user` ("Skal jeg
    beholde dem og lægge de nye varer oveni, eller tømme kurven og kun sende de nye?") and send again
-   with `cart_mode="keep"` or `"replace"` as they answer. Never choose for them.
+   with `cart_mode="keep"`, or `cart_mode="replace"` with `cart_token=details.cart_token`, as they
+   answer. Never choose for them.
 3. Times: `list_delivery_slots(shop=…, days=2)` for today and tomorrow, cheapest first. Say the
    price and the kind (Fleksibel is unattended and often cheaper at Nemlig).
 4. `get_delivery_info(shop=…)` for the chosen time and the deadline to change the order.

@@ -95,7 +95,8 @@ When: only after the user has seen the basket and its total and explicitly asks 
 Arguments: `shop`: `nemlig` or `bilkatogo`. `cart_mode`: leave it out on the first call; after the
 user has chosen, `keep` (leave the items already in the shop's cart and add the basket; a product in
 both gets the higher quantity, never the sum) or `replace` (empty the shop's cart first, then add the
-basket). `overrides` (bilkatogo only) as in `compare_shop_prices`. `wait_seconds` (default 20).
+basket). `cart_token`: with `replace` only, `details.cart_token` from the `cart_not_empty` answer the
+user was shown. `overrides` (bilkatogo only) as in `compare_shop_prices`. `wait_seconds` (default 20).
 Returns: a job; completed `result`: `item_count`, `basket_total_kr`, `cart_mode`, `cart_url`
 (nemlig: also `loaded_item_count`, `already_in_cart` and `cart_link_text`; bilkatogo: `status` sent |
 partial | nothing_to_send, `sent`, `skipped`, `missing`, `removed`, `unavailable`, and
@@ -104,10 +105,14 @@ partial | nothing_to_send, `sent`, `skipped`, `missing`, `removed`, `unavailable
 `cart_url`.
 Without `cart_mode`, an empty shop cart is filled straight away. A cart that already holds items
 sends **nothing** and answers the error `cart_not_empty` with `details`: `item_count`,
-`line_count`, `products_total_kr`, `names` (up to 5) and `ask_user`, the question in Danish ("Du har
+`line_count`, `products_total_kr`, `names` (up to 5), `ask_user`, the question in Danish ("Du har
 allerede 6 varer for 214,50 kr. i din Nemlig-kurv (bl.a. mælk, rugbrød og bananer). Skal jeg beholde
-dem og lægge de nye varer oveni, eller tømme kurven og kun sende de nye?").
-Next: on `cart_not_empty`, ask the user and call `send_basket` again with their `cart_mode`. After
+dem og lægge de nye varer oveni, eller tømme kurven og kun sende de nye?"), and `cart_token`.
+`replace` needs that `cart_token`: it ties the emptying to the cart the user saw. Without it, or when
+the cart has changed or 15 minutes have passed, the answer is `cart_not_empty` again with a fresh
+token and `details.token_status` (`missing` or `stale`), and nothing is emptied.
+Next: on `cart_not_empty`, ask the user and call `send_basket` again with their `cart_mode` (and, for
+`replace`, `cart_token=details.cart_token`). After
 the send, give the user `cart_url` (nemlig: as "Åbn kurven i Nemlig (åbner appen, hvis den er
 installeret)"): they check out and pay at the shop themselves. Say what happened to what was
 already in the cart (kept, or emptied first). A BilkaToGo pickup cart answers `pickup_store`: say

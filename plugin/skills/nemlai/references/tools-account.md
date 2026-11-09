@@ -36,7 +36,7 @@ When: only when the user asks to send feedback to the NemlAI team.
 Arguments: `message` (the user's own words, max 4000 characters).
 Returns: `feedback_id`.
 Next: tell the user it was sent.
-Pitfalls: people read it, with the user's name and household. 5 per 10 minutes; the same text twice in 5 minutes is `rate_limited`. Don't send on your own initiative.
+Pitfalls: people on the NemlAI team read it (quoted verbatim, with an opaque reference instead of the user's name or household). 5 per 10 minutes; the same text twice in 5 minutes is `rate_limited`. Don't send on your own initiative.
 Fallback: CLI `nemlai --json feedback --message "<text>"`; web https://nemlai.milops.org/settings (Open the page. Click 'Giv feedback' in the top navigation. Write your message and send it.)
 
 ### household_invite_code
