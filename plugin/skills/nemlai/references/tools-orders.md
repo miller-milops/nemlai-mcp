@@ -13,7 +13,7 @@ Returns: `members[]` with `alias` (the member's user id), `display_name`, `is_se
 `no_valid_session` | null) and `needs_reauth`; `any_failed`; `reauth_url`.
 Next: `refresh_orders` to fetch now; for `needs_reauth`, give the user `reauth_url`.
 Pitfalls: a member with no session row is not a failure (automatic fetching just hasn't run for
-them). `account_email_masked` is masked on purpose; don't ask the user for the full email.
+them). Don't ask the user for a member's email: `display_name` names them.
 Fallback: CLI `nemlai --json orders status`; web https://nemlai.milops.org/refresh-orders (Open the page; each member's last fetch and any login problem are shown.)
 
 ### refresh_orders

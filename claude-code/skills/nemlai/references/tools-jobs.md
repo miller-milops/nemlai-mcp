@@ -18,7 +18,8 @@ e.g. `ready`, `session_expired`), `kind` (the tool that started it), `message` (
 `cart_url`, `item_count`, `basket_total_kr`; for a generate `item_count`, `total_kr`; for an order
 refresh `orders_found`, `orders_new`, `orders_uploaded`, `steps`. A failed job comes back as an
 error with the job's code (`reauth_required`, `not_linked`, `upstream_unavailable`, …).
-Next: after a send, give the user `cart_url` (they check out themselves); after a generate,
+Next: after a completed send, give the user `cart_url` (they check out themselves; a failed send
+has no link); after a generate,
 `get_basket`; after an order refresh, `generate_basket` if the user wants a new basket; after a
 shop refresh, `list_shops`.
 Pitfalls: never start the same job again while it runs, and never re-send a basket because a

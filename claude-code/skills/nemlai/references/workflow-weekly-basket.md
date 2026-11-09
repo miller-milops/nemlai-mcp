@@ -24,7 +24,8 @@ Build the household's usual weekly basket, review it with the user and send it t
 8. `send_basket()` with `shop="nemlig"`. If it returns a `job_id`, poll `job_status()`; never send
    again without checking.
 9. Tell the user it is in their Nemlig cart and that they choose the delivery time and pay on
-   nemlig.com themselves.
+   nemlig.com themselves. Give them the completed send's `cart_url` as "Åbn kurven i Nemlig (åbner
+   appen, hvis den er installeret)". If the send failed there is no link: say what to do instead.
 
 **Pitfalls:** don't send on "make a basket"; don't raise quantities to reach a campaign without
 asking; a new `generate_basket()` throws away manual changes, so warn first.

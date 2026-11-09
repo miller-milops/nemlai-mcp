@@ -1,12 +1,11 @@
 # Account, household and feedback
 
 ### update_profile
-When: "change my name", "my Nemlig email changed".
-Arguments: `display_name` (1-64 characters), `nemlig_email`. Only passed fields change.
+When: "change my name". A changed Nemlig email is not set here: the user changes it in the web app.
+Arguments: `display_name` (1-64 characters).
 Returns: the new profile and `changed`.
-Next: after a new Nemlig email, the user must log in to Nemlig again in the web app (`account_links` topic `reauth_nemlig`).
 Pitfalls: there is no password argument and there never will be.
-Fallback: CLI `nemlai --json profile update --name <name> --nemlig-email <email>`; web https://nemlai.milops.org/settings (Open the page. Edit the 'Profil' section. Click 'Gem ændringer'.)
+Fallback: CLI `nemlai --json profile update --name <name>`; web https://nemlai.milops.org/settings (Open the page. Edit the 'Profil' section. Click 'Gem ændringer'.)
 
 ### export_my_data
 When: "give me my data" (GDPR).
@@ -43,7 +42,7 @@ Fallback: CLI `nemlai --json feedback --message "<text>"`; web https://nemlai.mi
 ### household_invite_code
 When: "how do I invite my partner?".
 Arguments: none.
-Returns: `household_id`, `invite_code`.
+Returns: `invite_code`.
 Next: the new member enters it during signup (`account_links` topic `signup`).
 Pitfalls: anyone with the code can join the household and see its orders; show it only to the user who asked.
 Fallback: CLI `nemlai --json household invite-code`; web https://nemlai.milops.org/settings (Open the page. Copy 'Invitationskode' in the 'Husstand' section.)

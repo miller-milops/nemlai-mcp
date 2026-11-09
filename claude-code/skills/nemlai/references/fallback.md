@@ -8,7 +8,10 @@ Go one step down only when the step above fails.
 
 1. **The tool returned an error with a `fix`:** do the `fix` call. Retry a timeout,
    `upstream_unavailable` or a 5xx **once** after a few seconds. For a job, poll `job_status()`
-   with its `job_id`; don't start the job again.
+   with its `job_id`; don't start the job again. An HTTP 502/503 from the proxy (not a NemlAI
+   error envelope) usually means a deploy is restarting the server: wait about 10 seconds and retry
+   once. A job the server no longer knows after that (`not_found`) was lost in the restart: start it
+   once more, except `send_basket()` (check the basket and the shop's cart first).
 2. **MCP unreachable, auth failing, or a tool missing → the CLI** (agents with a shell):
    `pipx install nemlai`, then run the tool's command from the table below (or the error's
    `fallback.cli`) as written, with `NEMLAI_TOKEN` set. They are `nemlai --json <command>`.
@@ -41,7 +44,7 @@ earlier results (SKUs, ids) or from the user.
 
 | Tool | CLI (`NEMLAI_TOKEN` set) | Web page and steps |
 |---|---|---|
-| `update_profile` | `nemlai --json profile update --name <name> --nemlig-email <email>` | https://nemlai.milops.org/settings: Open the page. Edit the 'Profil' section. Click 'Gem ændringer'. |
+| `update_profile` | `nemlai --json profile update --name <name>` | https://nemlai.milops.org/settings: Open the page. Edit the 'Profil' section. Click 'Gem ændringer'. |
 | `export_my_data` | `nemlai --json account export [--section <profile\|orders\|order_items\|preferences\|suggestions>]` | https://nemlai.milops.org/auth/export: Open the URL while logged in; the browser downloads a JSON file. |
 | `account_links` | none | https://nemlai.milops.org/settings: Open the page: password, account deletion and shop linking live here. |
 | `achievements` | `nemlai --json achievements` | https://nemlai.milops.org/achievements |
@@ -69,7 +72,11 @@ earlier results (SKUs, ids) or from the user.
 | `refresh_shop` | `nemlai --json shops refresh <bilka\|foetex>` | https://nemlai.milops.org/settings/shops: Open the page. Click 'Hent kvitteringer' for the shop. |
 | `compare_shop_prices` | `nemlai --json basket prices [--shop <shop_id>]` | https://nemlai.milops.org/kurv/: Open the page. Click the shop tabs above the basket (Bilka, Netto, …) to see each shop's total. |
 | `list_alternatives` | `nemlai --json basket alternatives <item> --shop <shop_id> [--search <text>]` | https://nemlai.milops.org/kurv/: Open the page. Open the shop's tab. Click 'Vælg alternativ' on the item. |
-| `send_basket` | `nemlai --json basket send` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. Open the cart link and let the user check out themselves. |
+| `list_offers` | `nemlai --json offers [--all] [--shop <nemlig\|bilkatogo>] [--category <text>]` | none |
+| `send_basket` | `nemlai --json basket send --keep\|--replace` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. If the shop's cart already holds items, the page asks: 'Behold dem og læg de nye oveni' or 'Tøm kurven og send kun de nye'. Let the user choose. Open the cart link and let the user check out themselves. |
+| `get_shop_cart` | `nemlai --json shop cart [nemlig\|bilkatogo]` | none |
+| `get_delivery_info` | `nemlai --json delivery <nemlig\|bilkatogo>` | none |
+| `list_delivery_slots` | `nemlai --json delivery slots [nemlig\|bilkatogo] [--days <n>]` | none |
 | `analytics_overview` | `nemlai --json analytics overview --last 3m` | https://nemlai.milops.org/analytics: Open the page. The Forbrug tab shows the total for the chosen period. Use the Top and Trend tabs for the ranking and the trend. |
 | `analytics_spend` | `nemlai --json analytics spend --last 30d` | https://nemlai.milops.org/analytics: Open the page. Stay on the Forbrug tab and set the period and the Produkt / Kategori filters. |
 | `analytics_top` | `nemlai --json analytics top products --last 90d` | https://nemlai.milops.org/analytics: Open the page. Open the Top tab, pick Produkter or Kategorier and set the period. |

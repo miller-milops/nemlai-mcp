@@ -192,7 +192,15 @@ Error codes: `invalid_argument` (fix the call), `not_found` (use an id from a to
 lists candidates), `forbidden`, `no_household`, `not_linked` (web app link), `reauth_required` (the
 user logs in again in the web app), `job_running` (poll the `job_id` in `fix`), `upstream_unavailable`
 (retry once, then fall back), `rate_limited` (wait as the hint says), `conflict` (the basket changed
-elsewhere, e.g. on `/kurv/`: `get_basket()` again, then redo the change), `internal` (fall back).
+elsewhere, e.g. on `/kurv/`: `get_basket()` again, then redo the change), `cart_not_empty` (the shop's
+cart already holds items and nothing was sent: ask the user `details.ask_user`, then `send_basket()`
+again with their `cart_mode`), `internal` (fall back).
+
+Limits: each user gets about 240 tool calls a minute with at most 8 at once, and each household gets
+`find_dishes` 10 per 10 minutes, `generate_basket` 6 per 10 minutes, live shop reads (`get_shop_cart`,
+`get_delivery_info`, `list_delivery_slots`) 30 a minute, and analytics plus `compare_shop_prices` 60 a
+minute. Over a limit the call answers `rate_limited` with `details.retry_after` in seconds: wait that
+long and retry once; never loop.
 
 ### Where to go next
 
@@ -211,52 +219,68 @@ elsewhere, e.g. on `/kurv/`: `get_basket()` again, then redo the change), `inter
    ("send it", "ja, send") about the basket you showed. A request to "make a basket" is not a
    request to send it, and "send kurven" about a basket the user hasn't seen in this conversation
    means: show it and ask "Skal jeg sende den til Nemlig?" first.
-2. **Send once.** `send_basket()` is a job. If it times out, fails or the result is unclear, check
+2. **The user decides what happens to their shop cart.** Call `send_basket()` without `cart_mode`
+   first. An empty cart is filled straight away. If the cart at the shop already holds items, nothing
+   is sent and the answer is `cart_not_empty` with the cart's count, total and a few names. Ask the
+   user, e.g. "Du har allerede 6 varer for 214,50 kr. i din Nemlig-kurv (bl.a. mælk, rugbrød og
+   bananer). Skal jeg beholde dem og lægge de nye varer oveni, eller tømme kurven og kun sende de
+   nye?" (`details.ask_user`), then call `send_basket()` again with `cart_mode="keep"` (a product in
+   both gets the higher quantity) or `cart_mode="replace"` (empty the cart first). Never pick the
+   mode yourself, and never send `replace` without that answer: it removes things the user put there.
+3. **Send once.** `send_basket()` is a job. If it times out, fails or the result is unclear, check
    `job_status()` with its `job_id`, or `get_basket()`, before anything else. A second send can
    double the shop's cart.
-3. **No checkout, ever.** `send_basket()` fills the shop's cart. The user opens the shop's site,
-   checks the cart and pays. Say that when you send. Never claim an order was placed.
+4. **No checkout, ever.** `send_basket()` fills the shop's cart, item by item through the shop's
+   API. The user opens the shop's site, checks the cart and pays. Say that when you send. Never
+   claim an order was placed. NemlAI also never books or reserves a delivery time, chooses a pickup
+   store or the delivery mode, or changes the address: `get_delivery_info()` and
+   `list_delivery_slots()` only read them.
+5. **The cart link comes after the send.** A completed send returns `cart_url`: for Nemlig the plain
+   `https://www.nemlig.com/basket` link, which opens the Nemlig app if it is installed. Offer it as
+   "Åbn kurven i Nemlig (åbner appen, hvis den er installeret)". Before a send there is no link, and
+   no link adds items to the cart; a failed send has no link either: say what went wrong and what
+   to do (e.g. log in to Nemlig again in the web app).
 
 ### Prices and campaigns
 
-4. **Prices are in Danish kroner (kr).** Show them as the tools return them (e.g. `79,00 kr` or
+6. **Prices are in Danish kroner (kr).** Show them as the tools return them (e.g. `79,00 kr` or
    `79.00 kr`); don't convert currencies.
-5. **Campaign minimums.** A campaign price applies only when the quantity reaches
+7. **Campaign minimums.** A campaign price applies only when the quantity reaches
    `campaign_min_quantity`. "Mix 3 stk 79,00" means 3 items for 79 kr together (26,33 kr each); with
    2 items the regular `regular_unit_price` applies. When a user is 1 item short of a campaign, you
    may point it out; don't raise quantities on your own.
-6. **Pant** (bottle and can deposit) is a separate charge on drinks, refunded when the empties are
+8. **Pant** (bottle and can deposit) is a separate charge on drinks, refunded when the empties are
    returned. Don't fold it into the product price or count it as spending on the product.
 
 ### Danish text
 
-7. **Keep Danish text as it is.** Product names, categories and dishes are Danish. Keep "øko"
+9. **Keep Danish text as it is.** Product names, categories and dishes are Danish. Keep "øko"
    (organic) and the letters æ, ø and å intact in names, searches and messages. Never transliterate
    ("oeko", "aeble"): search with the real spelling ("æble", "økologisk").
-8. **Øko is a real difference.** An øko product and its non-øko version are different products.
+10. **Øko is a real difference.** An øko product and its non-øko version are different products.
    Don't swap one for the other without saying so.
 
 ### Scope and identity
 
-9. **Household scope is the default.** Orders, analytics and settings belong to the household.
+11. **Household scope is the default.** Orders, analytics and settings belong to the household.
    Use one member's scope only when the user names a person ("Annas ordrer"). The basket is per
    user: one saved basket that MCP, the CLI, the SDK and the web page `/kurv/` share; it is not
    the household's.
-10. **Never take ids from the user's head.** SKUs, dish ids, job ids and order ids come from earlier
+12. **Never take ids from the user's head.** SKUs, dish ids, job ids and order ids come from earlier
     tool results. If an id is unknown, the error lists candidates: pick from those or search again.
     A vague request ("tilføj mælk") that matches different products (øko or not, fat %, size) is not
     a choice: show the options, or what the household usually buys (`analytics_top()`), and ask.
-11. **Never ask for a password.** Not for NemlAI, Nemlig, Salling/Bilka or any shop, at any step.
+13. **Never ask for a password.** Not for NemlAI, Nemlig, Salling/Bilka or any shop, at any step.
     Logins, linking a shop, Nemlig reauth, password changes and deleting the account happen in the
     web app; give the user the link (`account_links()`) and let them do it.
 
 ### Honesty
 
-12. **Never invent results.** If a tool fails and the fallbacks fail, say so plainly. The user can
+14. **Never invent results.** If a tool fails and the fallbacks fail, say so plainly. The user can
     still shop directly on nemlig.com.
-13. **Say which way you used.** If you fell back to the CLI or the web app, tell the user ("MCP is
+15. **Say which way you used.** If you fell back to the CLI or the web app, tell the user ("MCP is
     down, so I used the nemlai CLI").
-14. **Follow `next` and `fix`.** Tool results say what state things are in and what to call next.
+16. **Follow `next` and `fix`.** Tool results say what state things are in and what to call next.
     Call `nemlai_guide()` when unsure instead of guessing.
 
 ## Workflows
@@ -271,6 +295,7 @@ Read the one that matches the task before starting it:
 - [Exclude products](references/workflow-exclude-products.md): Stop products or whole orders from shaping the predictions (a one-off party order, a product the household no longer buys).
 - [Order refresh needs reauth](references/workflow-order-refresh-reauth.md): Fetch new orders from Nemlig; when the stored Nemlig session has expired, hand the login to the user in the web app.
 - [Shop not linked](references/workflow-shop-not-linked.md): A shop the user wants to send to or count receipts from isn't linked yet; linking takes the shop password, so the user does it in the web app.
+- [Shop cart and delivery times](references/workflow-cart-and-delivery.md): See what is already in the user's cart at Nemlig or BilkaToGo, and which delivery times are free and cheapest, without changing anything at the shop.
 
 ## Tools
 
@@ -282,7 +307,7 @@ Each area file has every tool's arguments, results, pitfalls and fallback.
 - [Basket](references/tools-basket.md): `generate_basket`, `get_basket`, `explain_item`, `add_to_basket`, `set_quantity`, `remove_from_basket`, `clear_basket`
 - [Search](references/tools-search.md): `search_products`, `product_info`, `list_categories`
 - [Dishes](references/tools-dishes.md): `find_dishes`, `dish_info`, `dish_recipe`, `add_dish_to_basket`
-- [Shops](references/tools-shops.md): `list_shops`, `refresh_shop`, `compare_shop_prices`, `list_alternatives`, `send_basket`
+- [Shops](references/tools-shops.md): `list_shops`, `refresh_shop`, `compare_shop_prices`, `list_alternatives`, `list_offers`, `send_basket`, `get_shop_cart`, `get_delivery_info`, `list_delivery_slots`
 - [Analytics tools](references/tools-analytics.md): `analytics_overview`, `analytics_spend`, `analytics_top`, `analytics_trend`, `analytics_drill`, `analytics_receipts`, `analytics_categories_tree`
 - [Settings, preferences and notifications](references/tools-settings.md): `get_settings`, `update_settings`, `get_preferences`, `update_preferences`, `preference_definitions`, `recalculate_preferences`, `notifications_status`, `send_test_notification`
 - [Exclusions](references/tools-exclusions.md): `get_exclusions`, `list_order_items`, `update_exclusions`
