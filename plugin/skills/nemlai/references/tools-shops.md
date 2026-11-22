@@ -28,7 +28,9 @@ Arguments: `shop`: `bilka` or `foetex` (linked-shop ids, not price-shop ids). `w
 every job.
 Returns: a job; completed `result`: `orders_imported`, `users[]` (per member `status`, `reason`,
 `orders_written`), `needs_relink[]` (member ids), `message`.
-Next: `list_shops` to show the states; `job_status` while running.
+Next: `list_shops` to show the states; `job_status` while running. New receipts make the prepared
+basket outdated: the next `generate_basket` makes a fresh one that leaves out products just bought
+there (those NemlAI can match to a Nemlig product; staples stay).
 Pitfalls: `not_linked` means nobody linked the shop: give the link in the hint. Members in
 `needs_relink` must link again in the web app (password; never in chat). At most 3 refreshes a
 minute per shop; a second call while one runs returns `job_running` with the job id.
@@ -53,18 +55,21 @@ without saying so. `suggestion` lines are a different product (see `differs`); t
 Campaign prices only apply from `campaign_min_quantity`. Overrides are not stored: pass them again on
 every call, including `send_basket`. CLI fallback for the latest prepared basket:
 `nemlai --json compare`.
-Fallback: CLI `nemlai --json basket prices [--shop <shop_id>]`; web https://nemlai.milops.org/kurv/ (Open the page. Click the shop tabs above the basket (Bilka, Netto, …) to see each shop's total.)
+Fallback: CLI `nemlai --json basket prices [--shop <shop_id>]`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page. Click the shop tabs above the basket (Bilka, Netto, …) to see each shop's total.)
 
 ### list_alternatives
-When: a shop lacks a basket item, matched it loosely, or the user wants another brand/size there.
-Arguments: `shop` (price-shop id), `sku` (the basket item's sku from `get_basket`), `query` (2–60 chars, Danish) to search that shop instead.
+When: a shop lacks a basket item, matched it loosely, or the user wants another brand/size there. Also, with `query` and no `sku`: "har Bilka …?", "hvad koster … i Netto?" (a plain search of that shop, no basket needed).
+Arguments: `shop` (price-shop id), `sku` (the basket item's sku from `get_basket`; leave out for a plain search), `query` (2–60 chars, Danish) to search that shop instead.
 Returns: `items[]` (`product_number`, `name`, `brand`, `size`, `source` match | suggestion |
 candidate | search, `differs`, `quantity`, `price`, campaign fields), `sku`, `basket_name`.
 Next: pass the pick as `overrides={sku: {shop: product_number}}` to `compare_shop_prices` or
 `send_basket`.
 Pitfalls: items added by search have no product match, so they need `query`. Keep "øko" in the
-search text when the basket item is organic.
-Fallback: CLI `nemlai --json basket alternatives <item> --shop <shop_id> [--search <text>]`; web https://nemlai.milops.org/kurv/ (Open the page. Open the shop's tab. Click 'Vælg alternativ' on the item.)
+search text when the basket item is organic. The search matches product name and brand only: a
+product-line name the shop doesn't print ("Buldak") finds nothing, the maker's brand ("Samyang")
+does. A plain search (no `sku`) is for showing: its products can't be added to the basket, which
+holds Nemlig products.
+Fallback: CLI `nemlai --json basket alternatives <item> --shop <shop_id> [--search <text>]`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page. Open the shop's tab. Click 'Vælg alternativ' on the item.)
 
 ### list_offers
 When: "hvad er på tilbud?", "er noget af det vi plejer at købe på tilbud?", "ugens tilbud hos Bilka",
@@ -132,7 +137,7 @@ password. Shops other than nemlig and bilkatogo can't be sent to. CLI fallback:
 Three read-only tools look at the user's cart **at the shop** (nemlig, bilkatogo), not the NemlAI
 basket. They use the stored shop logins and never change anything: no cart change, no delivery time
 booked, no pickup store, mode or address chosen. The user does all of that on the shop's site.
-Fallback: CLI `nemlai --json basket send --keep|--replace`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. If the shop's cart already holds items, the page asks: 'Behold dem og læg de nye oveni' or 'Tøm kurven og send kun de nye'. Let the user choose. Open the cart link and let the user check out themselves.)
+Fallback: CLI `nemlai --json basket send --keep|--replace`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. If the shop's cart already holds items, the page asks: 'Behold dem og læg de nye oveni' or 'Tøm kurven og send kun de nye'. Let the user choose. Open the cart link and let the user check out themselves.)
 
 ### get_shop_cart
 When: the user asks "hvad ligger der i min kurv hos Nemlig/BilkaToGo?", or wants to see the whole

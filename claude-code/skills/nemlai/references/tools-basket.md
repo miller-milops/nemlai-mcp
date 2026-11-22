@@ -22,10 +22,10 @@ bundle costs the campaign price and the rest the regular price (Rugbrød 29 kr a
 ### generate_basket
 When: "make my weekly basket", "start a new basket", after `refresh_orders()`, or when `get_basket()` is empty or old.
 Arguments: `size` (`small` ≈ 800 kr, `medium` ≈ 1500 kr (default), `large` ≈ 2500 kr); `budget_kr` (100–20000) sets a custom budget instead of the preset; `delivery_date` (YYYY-MM-DD, default the next delivery); `wait_seconds` (default 20, max 50).
-Returns: a job: `status` `completed` with `result` (`item_count`, `total_kr`) and `basket` (totals, budget, `campaign_hints`), or `status` `running` with `job_id`.
+Returns: a job: `status` `completed` with `result` (`item_count`, `total_kr`, `source`, and `prepared_at` or `new_orders_found`) and `basket` (totals, budget, `campaign_hints`), or `status` `running` with `job_id` and a `note`.
 Next: `get_basket()` to review it with the user; while running, `job_status(job_id)`.
-Pitfalls: it **replaces** the current basket, including the user's manual changes, so warn first if they have edited it. A second call while one runs returns `job_running` with the running job's id: poll that instead. Generating refreshes orders with the stored Nemlig login; when that login has expired it still generates from the existing history. The budget is a target, not a hard cap: compare `total_kr` with `budget.budget_kr`.
-Fallback: CLI `nemlai --json basket generate --size <small|medium|large> [--budget <kr>]`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. If a basket is shown, click 'Ny kurv'. Pick the size and a delivery date and generate the basket; it replaces the saved one.)
+Pitfalls: it **replaces** the current basket, including the user's manual changes, so warn first if they have edited it. A second call while one runs returns `job_running` with the running job's id: poll that instead. Generating refreshes orders with the stored Nemlig login; when that login has expired it still generates from the existing history. The budget is a target, not a hard cap: compare `total_kr` with `budget.budget_kr`. With `size` alone the result is the basket NemlAI prepared in advance (`source` `nightly`, made at `prepared_at`) as long as no new orders, settings or exclusions came in since, so asking again gives the same basket: say so instead of generating twice. Otherwise, and with `budget_kr` or `delivery_date`, it makes a new one (`source` `fresh`, about a minute; `new_orders_found` when new orders were the reason): tell the user it is on its way.
+Fallback: CLI `nemlai --json basket generate --size <small|medium|large> [--budget <kr>]`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it opens on the generate form. Pick the size and a delivery date and generate the basket; it replaces the saved one.)
 
 ### get_basket
 When: before talking about the basket, before `send_basket()`, after changes, or when the user asks what's in it.
@@ -33,7 +33,7 @@ Arguments: `limit` (default 50, max 200) and `cursor` (`next_cursor` from the pr
 Returns: `version`, `items` (see above), `item_count`, `total_kr`, `budget` (`preset`, `budget_kr`, `remaining_kr`, `over_budget`) or null, `generated_at`, `campaign_hints`, `next_cursor`.
 Next: `explain_item()`, `set_quantity()`, `remove_from_basket()`, `add_to_basket()`; `send_basket()` only when the user says so.
 Pitfalls: an empty basket means "generate one", not an error. Read every page before quoting a total of items; `total_kr` already covers the whole basket. Prices can change at the shop; the shop's cart total is final.
-Fallback: CLI `nemlai --json basket items`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Read the items and the total ('Anslået beløb'); an empty basket opens on the generate form.)
+Fallback: CLI `nemlai --json basket items`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Read the items and the total ('Anslået beløb'); an empty basket opens on the generate form.)
 
 ### explain_item
 When: "why is X in my basket?", "why 3 of them?", or when trimming to a budget and you need to know which items the prediction is least sure about.
@@ -41,7 +41,7 @@ Arguments: `sku` from `get_basket()`.
 Returns: `summary` (one Danish sentence), `reasons` (`[{category, text}]`, the text in Danish; categories: `purchase_history` (how often and when they buy it), `quantity` (why this many), `quantity_limited` (kept close to what they usually buy), `running_low` (probably running out), `season_or_holiday`, `often_together` (bought with something else), `fills_budget` (added to reach the budget), `less_likely` (often skipped when suggested), `replacement` (replaces a product that isn't available)), `predicted_quantity`, `typical_quantity`, `median_quantity`, `max_quantity_ever`, `quantity_limited`, `substitution` (`replaces`, `replaces_sku`) or null, `history` (`times_bought`, `orders_considered`, `last_bought`, `average_quantity`) or null, and the `item`.
 Next: `set_quantity()` or `remove_from_basket()` if the user disagrees.
 Pitfalls: items the user added themselves (`source` `manual` or `dish`) have no prediction reasons. A `fills_budget` reason means the item was added to reach the budget, so it is the first candidate to drop; `less_likely` items come next. `history` is null when the database can't be read; that's not an error.
-Fallback: CLI `nemlai --json basket why <sku>`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Tap the (i) next to the item.)
+Fallback: CLI `nemlai --json basket why <sku>`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Tap the (i) next to the item.)
 
 ### add_to_basket
 When: the user wants a product added ("add rugbrød", "2 liter øko mælk too").
@@ -49,7 +49,7 @@ Arguments: `items`: 1–50 of `{sku | query, quantity}` (quantity 1–99, defaul
 Returns: `added` (items as in `get_basket()`), `already_in_basket` (`sku`, `name`, current `quantity`), `basket` totals.
 Next: `get_basket()`; `set_quantity()` for items that were already there.
 Pitfalls: all or nothing. A `query` is added only when it matches exactly one product or exactly one product's name; otherwise **nothing** is added and the error (`invalid_argument`) lists `candidates` (`sku`, `name`, `price_kr`, `is_eco`, `available`): show them to the user and call again with the chosen `sku`. Never pick a candidate yourself unless the user's words name it exactly. Keep "øko" when the user said it. A product already in the basket is not doubled: change it with `set_quantity()`.
-Fallback: CLI `nemlai --json basket add --product-number <sku> --quantity <n>`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Type the product in 'Tilføj en vare eller søgning…' and click 'Tilføj'.)
+Fallback: CLI `nemlai --json basket add --product-number <sku> --quantity <n>`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Type the product in 'Tilføj en vare eller søgning…' and click 'Tilføj'.)
 
 ### set_quantity
 When: "more milk", "only one rugbrød", or to reach a campaign minimum.
@@ -57,7 +57,7 @@ Arguments: `sku` from `get_basket()`; `quantity` 1–99 (units, stk).
 Returns: the `item` (with `line_total`, `on_sale`, `hint`) and `basket` totals.
 Next: `get_basket()`.
 Pitfalls: 0 is not allowed: use `remove_from_basket()`. Check `hint`: below `campaign_min_quantity` the regular price applies.
-Fallback: CLI `nemlai --json basket adjust --product-number <sku> --quantity <n>`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Change the item's quantity with − and +; it is saved at once.)
+Fallback: CLI `nemlai --json basket adjust --product-number <sku> --quantity <n>`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Change the item's quantity with − and +; it is saved at once.)
 
 ### remove_from_basket
 When: the user doesn't want an item, or to trim the basket to the budget.
@@ -65,7 +65,7 @@ Arguments: `skus`: one or more from `get_basket()`.
 Returns: `removed` (`sku`, `name`, `quantity`) and `basket` totals.
 Next: `get_basket()`.
 Pitfalls: all or nothing: an unknown sku removes nothing and returns `not_found` with the closest basket items.
-Fallback: CLI `nemlai --json basket remove --product-number <sku>`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Press − at quantity 1, then the bin next to the item.)
+Fallback: CLI `nemlai --json basket remove --product-number <sku>`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Press − at quantity 1, then the bin next to the item.)
 
 ### clear_basket
 When: only when the user explicitly asks to empty the basket or start over by hand.
@@ -73,4 +73,4 @@ Arguments: none.
 Returns: `removed_count` and the (empty) `basket` totals.
 Next: `generate_basket()` or `add_to_basket()`.
 Pitfalls: destructive and can't be undone; clients ask the user first. To start over, `generate_basket()` already replaces the basket, so clearing first is unnecessary.
-Fallback: CLI `nemlai --json basket clear`; web https://nemlai.milops.org/kurv/ (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Remove the items (− at quantity 1, then the bin), or click 'Ny kurv' and generate a new basket, which replaces it.)
+Fallback: CLI `nemlai --json basket clear`; web https://nemlai.milops.org/kurv/?vis=kurv (Open the page (log in if asked): it shows the same basket as MCP and the CLI. Remove the items (− at quantity 1, then the bin), or click 'Ny kurv' and generate a new basket, which replaces it.)

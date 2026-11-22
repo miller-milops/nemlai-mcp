@@ -40,7 +40,7 @@ numbers as the web dashboard (`/analytics`) and `nemlai analytics …`.
 
 ### analytics_overview
 When: "How much did we spend?", a summary of a period. The one call to start with.
-Arguments: `bucket` (auto), `top_limit` (6), `recent_orders` (4, each with all its lines), `compare` (true:
+Arguments: `bucket` (auto), `top_limit` (6), `recent_orders` (1, each with all its lines; 0 = none), `compare` (true:
 against the previous equally long period; ignored for `since-first-order`). No product/category filters.
 Returns: `spend` (total, total_discount, order_count, comparison), `top_categories`, `trend`, `recent`
 (newest orders with lines).

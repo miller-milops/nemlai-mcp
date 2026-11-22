@@ -3,33 +3,33 @@
 ### get_settings
 When: the user asks how predictions are configured, or before changing a setting.
 Arguments: none.
-Returns: `order_cutoff_date` (YYYY-MM-DD or null), `auto_learn_from_purchases` (true/false/null), `definitions` (what each accepts), `configured` (false until the household has saved any preference).
+Returns: `order_cutoff_date` (YYYY-MM-DD or null), `auto_learn_from_purchases` (true/false/null), `definitions` (what each accepts), `configured` (false until the household has saved any preference), `version` (pass it as `if_match` to `update_settings`).
 Next: `update_settings`; `get_preferences` for taste and diet; `notifications_status`.
 Pitfalls: these are the only two prediction settings. There is no separate "prediction settings" tool. Diet, eco and brand taste live in `get_preferences`.
 Fallback: CLI `nemlai --json settings show`; web https://nemlai.milops.org/settings (Open the page. Read 'Forudsigelsesindstillinger'.)
 
 ### update_settings
 When: "ignore orders before March", "turn off auto-learn".
-Arguments: `order_cutoff_date` as `YYYY-MM-DD`, or the string `none` to clear; `auto_learn_from_purchases` true/false. Pass only what changes: the other setting keeps its value.
-Returns: the full new settings and `changed`.
+Arguments: `order_cutoff_date` as `YYYY-MM-DD`, or the string `none` to clear; `auto_learn_from_purchases` true/false. Pass only what changes: the other setting keeps its value. Optional `if_match`: the `version` from `get_settings`.
+Returns: the full new settings, `changed` and the new `version`.
 Next: `generate_basket` to see the effect.
-Pitfalls: a cutoff silently drops older orders from predictions, so confirm the date with the user. An unknown argument or a bad date returns `invalid_argument`.
+Pitfalls: a cutoff silently drops older orders from predictions, so confirm the date with the user. An unknown argument or a bad date returns `invalid_argument`. With a stale `if_match` nothing is saved: `conflict`, with the current settings in `details.current`; show them to the user before trying again.
 Fallback: CLI `nemlai --json settings update --cutoff <YYYY-MM-DD|none> --auto-learn <true|false>`; web https://nemlai.milops.org/settings (Open the page. Change the setting. Click 'Gem indstillinger'.)
 
 ### get_preferences
 When: "what does NemlAI think I like?", before `update_preferences`.
 Arguments: none.
-Returns: `calculated` (eco_ratio 0-1, avg_basket_dkk in kr, order_frequency_days, totals, top_categories, brand_affinity; derived from orders), `explicit` (dietary, prefer_eco, notes, exclude_categories, exclude_products, brand_preferences, custom), `settings` (cutoff, auto-learn).
+Returns: `calculated` (eco_ratio 0-1, avg_basket_dkk in kr, order_frequency_days, totals, top_categories, brand_affinity; derived from orders), `explicit` (dietary, prefer_eco, notes, exclude_categories, exclude_products, brand_preferences, custom), `settings` (cutoff, auto-learn), `version` (pass it as `if_match` when you write).
 Next: `update_preferences`; `recalculate_preferences` if the calculated numbers look stale.
 Pitfalls: calculated values can't be edited, only recalculated. Excluded orders and hidden lines are not here: use `get_exclusions`.
 Fallback: CLI `nemlai --json preferences show`; web https://nemlai.milops.org/settings
 
 ### update_preferences
 When: "I'm vegetarian now", "never suggest liver paste", "I prefer Arla".
-Arguments: scalars `dietary`, `prefer_eco`, `notes` replace; list the key in `clear` to remove it. Lists `exclude_categories` / `exclude_products` take `{add: [...], remove: [...]}` (remove is case-insensitive). `brand_preferences` and `custom` merge key by key; a null value deletes the key. Only pass what changes.
-Returns: the full new preferences and `changed`.
+Arguments: scalars `dietary`, `prefer_eco`, `notes` replace; list the key in `clear` to remove it. Lists `exclude_categories` / `exclude_products` take `{add: [...], remove: [...]}` (remove is case-insensitive). `brand_preferences` and `custom` merge key by key; a null value deletes the key. Only pass what changes. Optional `if_match`: the `version` from `get_preferences`.
+Returns: the full new preferences, `changed` and the new `version`.
 Next: `generate_basket` to apply.
-Pitfalls: never send a full list to "replace" it; use add and remove. Product names are Danish; keep æ, ø, å. To leave a past order out of predictions use `update_exclusions`; for the cutoff use `update_settings`.
+Pitfalls: never send a full list to "replace" it; use add and remove. Product names are Danish; keep æ, ø, å. To leave a past order out of predictions use `update_exclusions`; for the cutoff use `update_settings`. With a stale `if_match` nothing is saved: `conflict`, with the current preferences in `details.current`.
 Fallback: CLI `nemlai --json preferences update --dietary <d> --prefer-eco <true|false> --notes <n>`; web https://nemlai.milops.org/settings (Open the page. Edit the preferences. Save.)
 
 ### preference_definitions

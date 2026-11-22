@@ -3,7 +3,7 @@
   "name": "io.github.miller-milops/nemlai",
   "title": "NemlAI",
   "description": "Plan the next grocery basket from past Nemlig.com orders, compare Danish shop prices, fill the cart.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "websiteUrl": "https://nemlai.milops.org/agents",
   "repository": {
     "url": "https://github.com/miller-milops/nemlai-mcp",

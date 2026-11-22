@@ -24,11 +24,12 @@ Go one step down only when the step above fails.
 ## Rules on every step
 
 - **Never send a basket twice blindly.** After a failed or unclear `send_basket()`, check
-  `job_status()` or the basket (`get_basket()`, `nemlai --json basket items` or `/kurv/`) first.
+  `job_status()` or the basket (`get_basket()`, `nemlai --json basket items` or `/kurv/?vis=kurv`) first.
   A second send can double the shop's cart.
 - **The web page shows the same basket.** MCP, the CLI and the web page `/kurv/` share one saved
-  basket per user, so falling back to the web for a basket action means opening `/kurv/`: the
-  items you added are there. A change made on the page while you work makes your next write fail
+  basket per user, so falling back to the web for a basket action means opening `/kurv/?vis=kurv`:
+  the items you added are there. Plain `/kurv/` opens on the generate form (size, search, dishes),
+  with "Fortsæt med din kurv (N varer)" at the top when a basket is saved. A change made on the page while you work makes your next write fail
   with `conflict`: read the basket again (`get_basket()`) before you change it.
 - **Never ask the user to paste a password into chat**, whichever step you are on. Logins, shop
   linking and Nemlig reauth happen in the web app (or in the user's own terminal).
@@ -45,7 +46,7 @@ earlier results (SKUs, ids) or from the user.
 | Tool | CLI (`NEMLAI_TOKEN` set) | Web page and steps |
 |---|---|---|
 | `update_profile` | `nemlai --json profile update --name <name>` | https://nemlai.milops.org/settings: Open the page. Edit the 'Profil' section. Click 'Gem ændringer'. |
-| `export_my_data` | `nemlai --json account export [--section <profile\|orders\|order_items\|preferences\|suggestions>]` | https://nemlai.milops.org/auth/export: Open the URL while logged in; the browser downloads a JSON file. |
+| `export_my_data` | `nemlai --json account export [--section <profile\|orders\|order_items\|preferences\|suggestions\|saved_basket>]` | https://nemlai.milops.org/auth/export: Open the URL while logged in; the browser downloads a JSON file. |
 | `account_links` | none | https://nemlai.milops.org/settings: Open the page: password, account deletion and shop linking live here. |
 | `achievements` | `nemlai --json achievements` | https://nemlai.milops.org/achievements |
 | `send_feedback` | `nemlai --json feedback --message "<text>"` | https://nemlai.milops.org/settings: Open the page. Click 'Giv feedback' in the top navigation. Write your message and send it. |
@@ -54,13 +55,13 @@ earlier results (SKUs, ids) or from the user.
 | `household_info` | `nemlai --json household info` | https://nemlai.milops.org/settings: Open the page (log in if asked). Read the 'Husstand' section: Husstands-ID and Invitationskode. Members are listed on /refresh-orders under 'Andre i husstanden'. |
 | `order_fetch_status` | `nemlai --json orders status` | https://nemlai.milops.org/refresh-orders: Open the page; each member's last fetch and any login problem are shown. |
 | `refresh_orders` | `nemlai --json orders refresh [--member <user_id>]` | https://nemlai.milops.org/refresh-orders: Open the page (log in if asked). Click 'Opdater' and wait until it says the orders are uploaded. If it asks you to log in to Nemlig again, the user does that on the page (never in chat). |
-| `generate_basket` | `nemlai --json basket generate --size <small\|medium\|large> [--budget <kr>]` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. If a basket is shown, click 'Ny kurv'. Pick the size and a delivery date and generate the basket; it replaces the saved one. |
-| `get_basket` | `nemlai --json basket items` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Read the items and the total ('Anslået beløb'); an empty basket opens on the generate form. |
-| `explain_item` | `nemlai --json basket why <sku>` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Tap the (i) next to the item. |
-| `add_to_basket` | `nemlai --json basket add --product-number <sku> --quantity <n>` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Type the product in 'Tilføj en vare eller søgning…' and click 'Tilføj'. |
-| `set_quantity` | `nemlai --json basket adjust --product-number <sku> --quantity <n>` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Change the item's quantity with − and +; it is saved at once. |
-| `remove_from_basket` | `nemlai --json basket remove --product-number <sku>` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Press − at quantity 1, then the bin next to the item. |
-| `clear_basket` | `nemlai --json basket clear` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Remove the items (− at quantity 1, then the bin), or click 'Ny kurv' and generate a new basket, which replaces it. |
+| `generate_basket` | `nemlai --json basket generate --size <small\|medium\|large> [--budget <kr>]` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it opens on the generate form. Pick the size and a delivery date and generate the basket; it replaces the saved one. |
+| `get_basket` | `nemlai --json basket items` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Read the items and the total ('Anslået beløb'); an empty basket opens on the generate form. |
+| `explain_item` | `nemlai --json basket why <sku>` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Tap the (i) next to the item. |
+| `add_to_basket` | `nemlai --json basket add --product-number <sku> --quantity <n>` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Type the product in 'Tilføj en vare eller søgning…' and click 'Tilføj'. |
+| `set_quantity` | `nemlai --json basket adjust --product-number <sku> --quantity <n>` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Change the item's quantity with − and +; it is saved at once. |
+| `remove_from_basket` | `nemlai --json basket remove --product-number <sku>` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Press − at quantity 1, then the bin next to the item. |
+| `clear_basket` | `nemlai --json basket clear` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Remove the items (− at quantity 1, then the bin), or click 'Ny kurv' and generate a new basket, which replaces it. |
 | `search_products` | `nemlai --json search <query> [--limit <n>]` | https://nemlai.milops.org/kurv/: Open the page. Use the search field. |
 | `product_info` | `nemlai --json search info <sku>` | https://nemlai.milops.org/kurv/: Open the page. Search for the product and open it. |
 | `list_categories` | `nemlai --json categories` | none |
@@ -70,10 +71,10 @@ earlier results (SKUs, ids) or from the user.
 | `add_dish_to_basket` | `nemlai --json dish add all` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Pick a dish and add its ingredients. |
 | `list_shops` | `nemlai --json shops status` | https://nemlai.milops.org/settings/shops: Open the page; linked shops and each member's status are shown. Price shops are the tabs above the basket on /kurv/. |
 | `refresh_shop` | `nemlai --json shops refresh <bilka\|foetex>` | https://nemlai.milops.org/settings/shops: Open the page. Click 'Hent kvitteringer' for the shop. |
-| `compare_shop_prices` | `nemlai --json basket prices [--shop <shop_id>]` | https://nemlai.milops.org/kurv/: Open the page. Click the shop tabs above the basket (Bilka, Netto, …) to see each shop's total. |
-| `list_alternatives` | `nemlai --json basket alternatives <item> --shop <shop_id> [--search <text>]` | https://nemlai.milops.org/kurv/: Open the page. Open the shop's tab. Click 'Vælg alternativ' on the item. |
+| `compare_shop_prices` | `nemlai --json basket prices [--shop <shop_id>]` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page. Click the shop tabs above the basket (Bilka, Netto, …) to see each shop's total. |
+| `list_alternatives` | `nemlai --json basket alternatives <item> --shop <shop_id> [--search <text>]` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page. Open the shop's tab. Click 'Vælg alternativ' on the item. |
 | `list_offers` | `nemlai --json offers [--all] [--shop <nemlig\|bilkatogo>] [--category <text>]` | none |
-| `send_basket` | `nemlai --json basket send --keep\|--replace` | https://nemlai.milops.org/kurv/: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. If the shop's cart already holds items, the page asks: 'Behold dem og læg de nye oveni' or 'Tøm kurven og send kun de nye'. Let the user choose. Open the cart link and let the user check out themselves. |
+| `send_basket` | `nemlai --json basket send --keep\|--replace` | https://nemlai.milops.org/kurv/?vis=kurv: Open the page (log in if asked): it shows the same basket as MCP and the CLI. Check the basket and the total with the user. Nemlig: click 'Send til nemlig'. BilkaToGo: open the 'Bilka' tab and send from there. If the shop's cart already holds items, the page asks: 'Behold dem og læg de nye oveni' or 'Tøm kurven og send kun de nye'. Let the user choose. Open the cart link and let the user check out themselves. |
 | `get_shop_cart` | `nemlai --json shop cart [nemlig\|bilkatogo]` | none |
 | `get_delivery_info` | `nemlai --json delivery <nemlig\|bilkatogo>` | none |
 | `list_delivery_slots` | `nemlai --json delivery slots [nemlig\|bilkatogo] [--days <n>]` | none |

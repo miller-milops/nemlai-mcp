@@ -7,7 +7,7 @@ When: the user wants a product that isn't in the basket, wants a cheaper or øko
 Arguments: `query` in Danish, one product per search ("letmælk", "rugbrød", "øko bananer"); `limit` (default 10, max 50); `cursor` (`next_cursor`).
 Returns: `products` (`sku`, `name`, `price_kr`, `unit_price` + `unit_price_label` (e.g. "kr/l"), `is_eco`, `availability` (`status` ok | low_stock | unavailable, `reason`), `campaign_label`, `description`), `total`, `next_cursor`.
 Next: show the matches; `add_to_basket(items=[{sku, quantity}])` with the one the user picks; `product_info()` for details.
-Pitfalls: search one product at a time ("mælk og brød" finds neither well). Names are Danish: translate the user's words ("milk" → "mælk"). An empty list is a normal result, not an error: try a shorter word. `campaign_label` is the shop's text ("3 for 50", "Mix 3 stk 79,00"): the price shown is the single-unit price. Don't offer `unavailable` products.
+Pitfalls: Nemlig only; another shop is searched with `list_alternatives(shop, query)`. Search one product at a time ("mælk og brød" finds neither well). Names are Danish: translate the user's words ("milk" → "mælk"). An empty list is a normal result, not an error: try a shorter word. `campaign_label` is the shop's text ("3 for 50", "Mix 3 stk 79,00"): the price shown is the single-unit price. Don't offer `unavailable` products.
 Fallback: CLI `nemlai --json search <query> [--limit <n>]`; web https://nemlai.milops.org/kurv/ (Open the page. Use the search field.)
 
 ### product_info
